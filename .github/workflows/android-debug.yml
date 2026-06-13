@@ -1,0 +1,46 @@
+name: Android Debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "android-native/**"
+      - ".github/workflows/android-debug.yml"
+
+jobs:
+  build-debug-apk:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: android-native
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "7.6.4"
+
+      - name: Install Android SDK pieces
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-33" "build-tools;33.0.2"
+
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kutumba-debug-apk
+          path: android-native/app/build/outputs/apk/debug/*.apk
